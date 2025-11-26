@@ -1,0 +1,42 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+# Parâmetros
+Vin = 24.0
+L = 72e-6
+C = 8.69e-6
+R = 12 / (100/12)
+f_sw = 100e3
+Tsw = 1 / f_sw
+D = 0.5
+
+def buck_ode(t, x):
+    iL, vC = x
+    if (t % Tsw) < D*Tsw:
+        vL = Vin - vC
+    else:
+        vL = -vC
+    di_dt = vL / L
+    dv_dt = (iL - vC / R) / C
+    return [di_dt, dv_dt]
+
+t_span = (0, 500e-6)
+t_eval = np.linspace(0, 500e-6, 20000)
+
+sol = solve_ivp(buck_ode, t_span, [0, 0], t_eval=t_eval, max_step=50e-9)
+
+t = sol.t
+vC = sol.y[1]
+
+# Plot apenas da tensão
+plt.figure(figsize=(12, 6))
+plt.plot(t*1e6, vC, label="Tensão Vout")
+plt.axhline(12, color='red', linestyle='--', linewidth=2, label="Tensão média (12 V)")
+plt.title("Tensão no Capacitor - solve_ivp")
+plt.ylabel("Tensão (V)")
+plt.xlabel("Tempo (us)")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.show()
